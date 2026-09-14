@@ -19,7 +19,7 @@ class MeasurementConfig:
     min_object_points: int = 100
     min_sensor_share: float = 0.10
     max_height_mm: float = 320.0
-    uncertainty_mm: float = 3.1
+    required_sensor_ids: tuple[str, ...] = ("sensor_1", "sensor_2")
 
 
 @dataclass(frozen=True)
@@ -37,13 +37,11 @@ class MeasurementResult:
     quality: QualityInfo
     filtered_points: np.ndarray
     filtered_sensor_ids: np.ndarray
-    uncertainty_mm: float
 
     def to_dict(self) -> dict:
         payload: dict = {
             "status": self.quality.status,
             "quality": asdict(self.quality),
-            "uncertainty_mm": self.uncertainty_mm,
         }
         if self.box is not None:
             payload["dimensions_mm"] = {
@@ -75,6 +73,9 @@ def measure_object(sensor_clouds: dict[str, np.ndarray], config: MeasurementConf
     """Удаляет ленту/выбросы, проверяет качество и вычисляет габариты."""
 
     cfg = config or MeasurementConfig()
+    missing_sensor_ids = tuple(
+        sensor_id for sensor_id in cfg.required_sensor_ids if sensor_id not in sensor_clouds
+    )
     points, sensor_ids = _combine(sensor_clouds)
     raw_count = len(points)
 
@@ -94,16 +95,16 @@ def measure_object(sensor_clouds: dict[str, np.ndarray], config: MeasurementConf
         object_points = object_points[neighbor_mask]
         object_sensor_ids = object_sensor_ids[neighbor_mask]
 
-    reasons: list[str] = []
+    reasons = [f"MISSING_SENSOR_{sensor_id}" for sensor_id in missing_sensor_ids]
     if len(object_points) < cfg.min_object_points:
         reasons.append("TOO_FEW_POINTS")
 
     shares: dict[str, float] = {}
     if len(object_points):
-        for sensor_id in sensor_clouds:
+        for sensor_id in cfg.required_sensor_ids:
             share = float(np.mean(object_sensor_ids == sensor_id))
             shares[sensor_id] = round(share, 4)
-            if share < cfg.min_sensor_share:
+            if sensor_id in sensor_clouds and share < cfg.min_sensor_share:
                 reasons.append(f"LOW_SHARE_{sensor_id}")
         if float(object_points[:, 2].max()) > cfg.max_height_mm:
             reasons.append("HEIGHT_OUT_OF_RANGE")
@@ -127,6 +128,4 @@ def measure_object(sensor_clouds: dict[str, np.ndarray], config: MeasurementConf
         quality=quality,
         filtered_points=object_points,
         filtered_sensor_ids=object_sensor_ids,
-        uncertainty_mm=cfg.uncertainty_mm,
     )
-

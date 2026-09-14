@@ -42,6 +42,13 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result.quality.status, "REJECT")
         self.assertIn("LOW_SHARE_sensor_2", result.quality.reasons)
 
+    def test_missing_second_sensor_is_rejected(self):
+        scene = generate_two_sensor_scene(seed=7)
+        result = measure_object({"sensor_1": scene.sensor_clouds["sensor_1"]})
+        self.assertEqual(result.quality.status, "REJECT")
+        self.assertIsNone(result.box)
+        self.assertIn("MISSING_SENSOR_sensor_2", result.quality.reasons)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,7 +40,26 @@ class GeometryTests(unittest.TestCase):
         mask = radius_outlier_mask(points, radius_mm=2.0, min_neighbors=2)
         self.assertEqual(mask.tolist(), [True, True, True, True, False])
 
+    def test_non_rectangular_u_shape_footprint(self):
+        footprint = np.array(
+            [
+                [-50.0, -30.0],
+                [50.0, -30.0],
+                [50.0, 30.0],
+                [20.0, 30.0],
+                [20.0, -5.0],
+                [-20.0, -5.0],
+                [-20.0, 30.0],
+                [-50.0, 30.0],
+            ]
+        )
+        angle = math.radians(23.0)
+        rotation = np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]])
+        rotated = footprint @ rotation.T
+        points = np.column_stack([rotated, np.full(len(rotated), 25.0)])
+        box = constrained_obb(points)
+        np.testing.assert_allclose(box.dimensions, [100.0, 60.0, 25.0], atol=1e-8)
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -166,8 +166,8 @@ def constrained_obb(points_xyz: np.ndarray, belt_z: float = 0.0) -> OrientedBox:
 def radius_outlier_mask(points_xyz: np.ndarray, radius_mm: float = 4.0, min_neighbors: int = 3) -> np.ndarray:
     """Возвращает маску точек, имеющих соседей в заданном радиусе.
 
-    Для ускорения пространство разбивается на кубические ячейки. Реализация
-    специально оставлена простой и понятной для учебного проекта.
+    Для ускорения пространство разбивается на кубические ячейки, поэтому поиск
+    соседей ограничивается ближайшими ячейками пространственной сетки.
     """
 
     points = np.asarray(points_xyz, dtype=float)
@@ -206,4 +206,3 @@ def radius_outlier_mask(points_xyz: np.ndarray, radius_mm: float = 4.0, min_neig
             if keep[index]:
                 break
     return keep
-

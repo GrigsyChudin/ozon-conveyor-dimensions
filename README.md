@@ -6,7 +6,7 @@
   <a href="https://github.com/GrigsyChudin/ozon-conveyor-dimensions/actions/workflows/tests.yml"><img src="https://github.com/GrigsyChudin/ozon-conveyor-dimensions/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/NumPy-only-4D77CF" alt="NumPy only">
-  <img src="https://img.shields.io/badge/status-учебный%20прототип-f28c38" alt="Учебный прототип">
+  <img src="https://img.shields.io/badge/status-прототип-f28c38" alt="Прототип">
 </div>
 
 <p align="center">
@@ -25,7 +25,7 @@
 
 ## О проекте
 
-Учебный прототип для тестового задания мастерской Ozon по треку «Компьютерное
+Прототип для тестового задания мастерской Ozon по треку «Компьютерное
 зрение». Настоящие сенсоры не требуются: программа сама создаёт два облака
 точек, добавляет конвейерную ленту, шум и выбросы, а затем восстанавливает
 габариты объекта.
@@ -134,7 +134,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 
 ## Ограничения базовой версии
 
-Текущее демо — это понятная 2.5D-версия на NumPy: минимальный прямоугольник
+Текущее демо реализует 2.5D-подход на NumPy: минимальный прямоугольник
 ищется в плоскости ленты, а высота измеряется по оси Z. Метод рассчитан на
 объекты, расположенные на опорной плоскости конвейера без значительного наклона.
 
@@ -171,5 +171,5 @@ demo_output/         готовый пример результата
 ---
 
 <p align="center">
-  Учебный проект · Python · NumPy · обработка облаков точек
+  Python · NumPy · обработка облаков точек
 </p>

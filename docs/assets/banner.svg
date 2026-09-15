@@ -10,7 +10,7 @@
   <circle cx="1110" cy="42" r="150" fill="#2f71c4" opacity=".12"/>
   <circle cx="1050" cy="315" r="115" fill="#f48b34" opacity=".08"/>
   <g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#fff">
-    <text x="68" y="102" font-size="18" font-weight="700" letter-spacing="2.4" fill="#8dc4ff">COMPUTER VISION · УЧЕБНЫЙ ПРОТОТИП</text>
+    <text x="68" y="102" font-size="18" font-weight="700" letter-spacing="2.4" fill="#8dc4ff">COMPUTER VISION · ПРОТОТИП СИСТЕМЫ</text>
     <text x="68" y="159" font-size="43" font-weight="750">Измерение габаритов</text>
     <text x="68" y="207" font-size="43" font-weight="750">товара на конвейере</text>
     <text x="70" y="250" font-size="20" fill="#c8dcf5">Два ракурса облака точек → фильтрация → 2.5D OBB</text>

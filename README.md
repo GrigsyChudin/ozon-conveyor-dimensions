@@ -6,6 +6,7 @@
   <a href="https://github.com/GrigsyChudin/ozon-conveyor-dimensions/actions/workflows/tests.yml"><img src="https://github.com/GrigsyChudin/ozon-conveyor-dimensions/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python 3.10+">
   <img src="https://img.shields.io/badge/NumPy-only-4D77CF" alt="NumPy only">
+  <img src="https://img.shields.io/badge/datasets-9-7A5AF8" alt="9 datasets">
   <img src="https://img.shields.io/badge/status-прототип-f28c38" alt="Прототип">
 </div>
 
@@ -17,6 +18,7 @@
 <p align="center">
   <a href="#демо"><b>Демо</b></a> ·
   <a href="#быстрый-запуск"><b>Запуск</b></a> ·
+  <a href="#серия-экспериментов"><b>Эксперименты</b></a> ·
   <a href="#как-это-работает"><b>Алгоритм</b></a> ·
   <a href="docs/ALGORITHM.md"><b>Техническое описание</b></a>
 </p>
@@ -47,6 +49,41 @@
 
 После запуска программа также сохраняет `result.json`, `filtered_points.csv` и
 векторную визуализацию `demo.svg`.
+
+## Серия экспериментов
+
+В проект добавлено девять воспроизводимых сценариев: объекты от минимального
+куба `10 × 10 × 10 мм` до высокой коробки `280 мм`, поворот до `78°`, повышенный
+шум, пропуски и потеря второго сенсора.
+
+![Сводка проверки на наборах данных](benchmark_output/overview.svg)
+
+Запуск всей серии:
+
+```bash
+ozon-dim-benchmark
+```
+
+Команда создаёт три файла в `benchmark_output/`:
+
+- `dashboard.html` — интерактивная страница с переключением сценариев;
+- `results.json` — результаты в машиночитаемом виде;
+- `overview.svg` — сводная диаграмма для README.
+
+В интерактивной странице можно фильтровать наборы по типу, переключать сценарии
+и сравнивать эталонные размеры с измеренными. Облако точек и найденный OBB
+перестраиваются при выборе набора данных.
+
+### Выводы по серии
+
+- все 7 геометрических сценариев прошли допуск по каждой стороне;
+- максимальная ошибка составила `5.29 мм` при допустимых `6.5 мм` на сценарии с
+  повышенным шумом;
+- оба сценария с потерей данных остановлены quality gate со статусом `REJECT`.
+
+Параметры наборов находятся в
+[`datasets/scenarios.json`](datasets/scenarios.json). Все данные генерируются с
+фиксированными seed, поэтому эксперимент повторяется с тем же результатом.
 
 ## Как это работает
 
@@ -84,7 +121,7 @@ flowchart LR
 - проверка допуска отдельно по каждой стороне;
 - quality gate для пустых или неполных данных;
 - экспорт результата в JSON, CSV и SVG;
-- 10 unit-тестов и автоматическая проверка через GitHub Actions.
+- 13 unit-тестов и автоматическая проверка через GitHub Actions.
 
 ## Быстрый запуск
 
@@ -164,8 +201,10 @@ src/ozon_dimension_demo/
   visualization.py  SVG без тяжёлых библиотек
   cli.py            командная строка
 tests/               unit-тесты
+datasets/             параметры девяти сценариев
 docs/ALGORITHM.md    описание алгоритма
 demo_output/         готовый пример результата
+benchmark_output/    сводка и интерактивный dashboard
 ```
 
 ---

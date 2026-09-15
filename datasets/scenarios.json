@@ -1,0 +1,99 @@
+[
+  {
+    "id": "minimum-cube",
+    "title": "Минимальный куб",
+    "category": "geometry",
+    "description": "Нижняя граница диапазона размеров.",
+    "dimensions_mm": [10, 10, 10],
+    "yaw_deg": 31,
+    "seed": 9,
+    "finding": "Проверяет, что объект 10 × 10 × 10 мм не теряется после фильтрации."
+  },
+  {
+    "id": "compact-box",
+    "title": "Компактная коробка",
+    "category": "geometry",
+    "description": "Небольшой товар с малым углом поворота.",
+    "dimensions_mm": [80, 60, 35],
+    "yaw_deg": 12,
+    "seed": 15,
+    "finding": "Показывает точность на небольшом объекте с близкими длиной и шириной."
+  },
+  {
+    "id": "standard-box",
+    "title": "Стандартная коробка",
+    "category": "geometry",
+    "description": "Основной сценарий 200 × 100 × 40 мм.",
+    "dimensions_mm": [200, 100, 40],
+    "yaw_deg": 27,
+    "seed": 7,
+    "finding": "Базовый сценарий для сравнения с результатом из README."
+  },
+  {
+    "id": "long-parcel",
+    "title": "Длинная посылка",
+    "category": "geometry",
+    "description": "Вытянутый объект с поворотом 42°.",
+    "dimensions_mm": [360, 80, 55],
+    "yaw_deg": 42,
+    "seed": 21,
+    "finding": "Проверяет устойчивость минимального прямоугольника для вытянутой формы."
+  },
+  {
+    "id": "tall-box",
+    "title": "Высокая коробка",
+    "category": "geometry",
+    "description": "Высота близка к верхней границе диапазона.",
+    "dimensions_mm": [120, 90, 280],
+    "yaw_deg": 18,
+    "seed": 30,
+    "finding": "Проверяет измерение высоты 280 мм и ограничение рабочего диапазона."
+  },
+  {
+    "id": "sharp-rotation",
+    "title": "Поворот 78°",
+    "category": "geometry",
+    "description": "Почти поперечное положение на ленте.",
+    "dimensions_mm": [240, 110, 70],
+    "yaw_deg": 78,
+    "seed": 44,
+    "finding": "Показывает, что результат не зависит от ориентации объекта в плоскости ленты."
+  },
+  {
+    "id": "noisy-surface",
+    "title": "Шумная поверхность",
+    "category": "robustness",
+    "description": "Повышенный шум, 18% пропусков и много выбросов.",
+    "dimensions_mm": [180, 130, 65],
+    "yaw_deg": 34,
+    "seed": 52,
+    "noise_std_mm": 1.0,
+    "dropout_rate": 0.18,
+    "outlier_count": 80,
+    "finding": "Оценивает запас точности при ухудшении качества облака точек."
+  },
+  {
+    "id": "weak-second-sensor",
+    "title": "Мало данных сенсора 2",
+    "category": "quality",
+    "description": "От второго ракурса остаётся только восемь точек.",
+    "dimensions_mm": [180, 100, 60],
+    "yaw_deg": 25,
+    "seed": 61,
+    "mutation": "weak_sensor_2",
+    "expected_status": "REJECT",
+    "finding": "Quality gate должен остановить измерение при недостаточной доле второго ракурса."
+  },
+  {
+    "id": "missing-second-sensor",
+    "title": "Нет сенсора 2",
+    "category": "quality",
+    "description": "Полная потеря одного из обязательных ракурсов.",
+    "dimensions_mm": [180, 100, 60],
+    "yaw_deg": 25,
+    "seed": 61,
+    "mutation": "missing_sensor_2",
+    "expected_status": "REJECT",
+    "finding": "Quality gate должен вернуть MISSING_SENSOR и не публиковать размеры."
+  }
+]

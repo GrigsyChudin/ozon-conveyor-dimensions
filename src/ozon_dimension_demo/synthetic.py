@@ -71,6 +71,9 @@ def generate_two_sensor_scene(
     yaw_deg: float = 27.0,
     step_mm: float = 5.0,
     seed: int = 7,
+    noise_std_mm: float = 0.35,
+    dropout_rate: float = 0.04,
+    outlier_count: int = 24,
 ) -> SyntheticScene:
     """Создаёт два синтетических ракурса, ленту, шум и выбросы.
 
@@ -81,6 +84,12 @@ def generate_two_sensor_scene(
 
     if min(length_mm, width_mm, height_mm) <= 0:
         raise ValueError("Размеры должны быть положительными")
+    if noise_std_mm < 0:
+        raise ValueError("Стандартное отклонение шума не может быть отрицательным")
+    if not 0.0 <= dropout_rate < 1.0:
+        raise ValueError("Доля пропусков должна находиться в диапазоне [0, 1)")
+    if outlier_count < 0:
+        raise ValueError("Количество выбросов не может быть отрицательным")
 
     rng = np.random.default_rng(seed)
     # У реального профилометра шаг около 1–2 мм. Для крупных объектов в демо
@@ -103,16 +112,16 @@ def generate_two_sensor_scene(
     ):
         visible = (normals @ view) > 0.05
         object_points = points[visible].copy()
-        keep = rng.random(len(object_points)) > 0.04
+        keep = rng.random(len(object_points)) > dropout_rate
         object_points = object_points[keep]
-        object_points += rng.normal(0.0, 0.35, size=object_points.shape) + bias
+        object_points += rng.normal(0.0, noise_std_mm, size=object_points.shape) + bias
 
         belt_part = belt[rng.random(len(belt)) < 0.45]
         outliers = np.column_stack(
             [
-                rng.uniform(-260.0, 260.0, 24),
-                rng.uniform(-240.0, 240.0, 24),
-                rng.uniform(10.0, 220.0, 24),
+                rng.uniform(-260.0, 260.0, outlier_count),
+                rng.uniform(-240.0, 240.0, outlier_count),
+                rng.uniform(10.0, 220.0, outlier_count),
             ]
         )
         clouds[sensor_id] = np.vstack([object_points, belt_part, outliers])

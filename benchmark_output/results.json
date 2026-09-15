@@ -1,0 +1,386 @@
+{
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "geometry_passed": 7,
+    "geometry_total": 7,
+    "quality_passed": 2,
+    "quality_total": 2,
+    "max_error_mm": 5.295,
+    "max_error_tolerance_mm": 6.5,
+    "max_error_scenario": "noisy-surface"
+  },
+  "conclusions": [
+    "7 из 7 геометрических сценариев прошли допуск по каждой стороне.",
+    "Максимальная ошибка — 5.29 мм при допустимых 6.50 мм (Шумная поверхность).",
+    "Quality gate корректно обработал 2 из 2 сценариев с потерей данных."
+  ],
+  "scenarios": [
+    {
+      "id": "minimum-cube",
+      "title": "Минимальный куб",
+      "category": "geometry",
+      "description": "Нижняя граница диапазона размеров.",
+      "finding": "Проверяет, что объект 10 × 10 × 10 мм не теряется после фильтрации.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        10.0,
+        10.0,
+        10.0
+      ],
+      "measured_mm": [
+        11.409,
+        11.173,
+        10.841
+      ],
+      "error_mm": [
+        1.409,
+        1.173,
+        0.841
+      ],
+      "tolerance_mm": [
+        5.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 31,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 2448,
+      "object_points": 163,
+      "sensor_shares": {
+        "sensor_1": 0.5031,
+        "sensor_2": 0.4969
+      }
+    },
+    {
+      "id": "compact-box",
+      "title": "Компактная коробка",
+      "category": "geometry",
+      "description": "Небольшой товар с малым углом поворота.",
+      "finding": "Показывает точность на небольшом объекте с близкими длиной и шириной.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        80.0,
+        60.0,
+        35.0
+      ],
+      "measured_mm": [
+        81.606,
+        61.442,
+        36.051
+      ],
+      "error_mm": [
+        1.606,
+        1.442,
+        1.051
+      ],
+      "tolerance_mm": [
+        5.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 12,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 3142,
+      "object_points": 721,
+      "sensor_shares": {
+        "sensor_1": 0.5062,
+        "sensor_2": 0.4938
+      }
+    },
+    {
+      "id": "standard-box",
+      "title": "Стандартная коробка",
+      "category": "geometry",
+      "description": "Основной сценарий 200 × 100 × 40 мм.",
+      "finding": "Базовый сценарий для сравнения с результатом из README.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        200.0,
+        100.0,
+        40.0
+      ],
+      "measured_mm": [
+        201.591,
+        101.653,
+        41.229
+      ],
+      "error_mm": [
+        1.591,
+        1.653,
+        1.229
+      ],
+      "tolerance_mm": [
+        10.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 27,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 4986,
+      "object_points": 2352,
+      "sensor_shares": {
+        "sensor_1": 0.5017,
+        "sensor_2": 0.4983
+      }
+    },
+    {
+      "id": "long-parcel",
+      "title": "Длинная посылка",
+      "category": "geometry",
+      "description": "Вытянутый объект с поворотом 42°.",
+      "finding": "Проверяет устойчивость минимального прямоугольника для вытянутой формы.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        360.0,
+        80.0,
+        55.0
+      ],
+      "measured_mm": [
+        361.808,
+        82.063,
+        56.284
+      ],
+      "error_mm": [
+        1.808,
+        2.063,
+        1.284
+      ],
+      "tolerance_mm": [
+        18.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 42,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 6701,
+      "object_points": 3697,
+      "sensor_shares": {
+        "sensor_1": 0.4969,
+        "sensor_2": 0.5031
+      }
+    },
+    {
+      "id": "tall-box",
+      "title": "Высокая коробка",
+      "category": "geometry",
+      "description": "Высота близка к верхней границе диапазона.",
+      "finding": "Проверяет измерение высоты 280 мм и ограничение рабочего диапазона.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        120.0,
+        90.0,
+        280.0
+      ],
+      "measured_mm": [
+        122.258,
+        92.217,
+        281.212
+      ],
+      "error_mm": [
+        2.258,
+        2.217,
+        1.212
+      ],
+      "tolerance_mm": [
+        6.0,
+        5.0,
+        14.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 18,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 7982,
+      "object_points": 4179,
+      "sensor_shares": {
+        "sensor_1": 0.5039,
+        "sensor_2": 0.4961
+      }
+    },
+    {
+      "id": "sharp-rotation",
+      "title": "Поворот 78°",
+      "category": "geometry",
+      "description": "Почти поперечное положение на ленте.",
+      "finding": "Показывает, что результат не зависит от ориентации объекта в плоскости ленты.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        240.0,
+        110.0,
+        70.0
+      ],
+      "measured_mm": [
+        244.261,
+        111.941,
+        71.346
+      ],
+      "error_mm": [
+        4.261,
+        1.941,
+        1.346
+      ],
+      "tolerance_mm": [
+        12.0,
+        5.5,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 78,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 6477,
+      "object_points": 3525,
+      "sensor_shares": {
+        "sensor_1": 0.4979,
+        "sensor_2": 0.5021
+      }
+    },
+    {
+      "id": "noisy-surface",
+      "title": "Шумная поверхность",
+      "category": "robustness",
+      "description": "Повышенный шум, 18% пропусков и много выбросов.",
+      "finding": "Оценивает запас точности при ухудшении качества облака точек.",
+      "expected_status": "OK",
+      "status": "OK",
+      "passed": true,
+      "reasons": [],
+      "truth_mm": [
+        180.0,
+        130.0,
+        65.0
+      ],
+      "measured_mm": [
+        184.504,
+        135.295,
+        68.327
+      ],
+      "error_mm": [
+        4.504,
+        5.295,
+        3.327
+      ],
+      "tolerance_mm": [
+        9.0,
+        6.5,
+        5.0
+      ],
+      "within_tolerance": true,
+      "yaw_deg": 34,
+      "noise_std_mm": 1.0,
+      "dropout_rate": 0.18,
+      "outlier_count": 80,
+      "raw_points": 5561,
+      "object_points": 2338,
+      "sensor_shares": {
+        "sensor_1": 0.5145,
+        "sensor_2": 0.4855
+      }
+    },
+    {
+      "id": "weak-second-sensor",
+      "title": "Мало данных сенсора 2",
+      "category": "quality",
+      "description": "От второго ракурса остаётся только восемь точек.",
+      "finding": "Quality gate должен остановить измерение при недостаточной доле второго ракурса.",
+      "expected_status": "REJECT",
+      "status": "REJECT",
+      "passed": true,
+      "reasons": [
+        "LOW_SHARE_sensor_2"
+      ],
+      "truth_mm": [
+        180.0,
+        100.0,
+        60.0
+      ],
+      "measured_mm": null,
+      "error_mm": null,
+      "tolerance_mm": [
+        9.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": false,
+      "yaw_deg": 25,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 2631,
+      "object_points": 953,
+      "sensor_shares": {
+        "sensor_1": 0.9916,
+        "sensor_2": 0.0084
+      }
+    },
+    {
+      "id": "missing-second-sensor",
+      "title": "Нет сенсора 2",
+      "category": "quality",
+      "description": "Полная потеря одного из обязательных ракурсов.",
+      "finding": "Quality gate должен вернуть MISSING_SENSOR и не публиковать размеры.",
+      "expected_status": "REJECT",
+      "status": "REJECT",
+      "passed": true,
+      "reasons": [
+        "MISSING_SENSOR_sensor_2"
+      ],
+      "truth_mm": [
+        180.0,
+        100.0,
+        60.0
+      ],
+      "measured_mm": null,
+      "error_mm": null,
+      "tolerance_mm": [
+        9.0,
+        5.0,
+        5.0
+      ],
+      "within_tolerance": false,
+      "yaw_deg": 25,
+      "noise_std_mm": 0.35,
+      "dropout_rate": 0.04,
+      "outlier_count": 24,
+      "raw_points": 2623,
+      "object_points": 942,
+      "sensor_shares": {
+        "sensor_1": 1.0,
+        "sensor_2": 0.0
+      }
+    }
+  ]
+}

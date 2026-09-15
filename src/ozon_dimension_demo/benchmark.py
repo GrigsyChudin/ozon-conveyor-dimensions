@@ -1,17 +1,18 @@
-"""Запуск набора синтетических сценариев и построение HTML-отчёта."""
+"""Запуск набора синтетических сценариев и построение SVG-отчёта."""
 
 from __future__ import annotations
 
 import argparse
 import json
 from dataclasses import dataclass
+from html import escape
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from .pipeline import MeasurementConfig, measure_object
-from .synthetic import generate_two_sensor_scene
+from .synthetic import SyntheticScene, generate_two_sensor_scene
 
 
 @dataclass(frozen=True)
@@ -69,7 +70,7 @@ def _apply_mutation(sensor_clouds: dict[str, np.ndarray], mutation: str) -> dict
     raise ValueError(f"Неизвестная модификация сценария: {mutation}")
 
 
-def run_scenario(spec: DatasetSpec) -> dict[str, Any]:
+def generate_dataset(spec: DatasetSpec) -> tuple[SyntheticScene, dict[str, np.ndarray]]:
     length, width, height = spec.dimensions_mm
     scene = generate_two_sensor_scene(
         length_mm=length,
@@ -81,7 +82,11 @@ def run_scenario(spec: DatasetSpec) -> dict[str, Any]:
         dropout_rate=spec.dropout_rate,
         outlier_count=spec.outlier_count,
     )
-    clouds = _apply_mutation(scene.sensor_clouds, spec.mutation)
+    return scene, _apply_mutation(scene.sensor_clouds, spec.mutation)
+
+
+def run_scenario(spec: DatasetSpec) -> dict[str, Any]:
+    scene, clouds = generate_dataset(spec)
     result = measure_object(clouds, MeasurementConfig())
 
     truth = scene.truth_dimensions
@@ -212,10 +217,69 @@ def _write_overview_svg(path: Path, report: dict[str, Any]) -> None:
     path.write_text("\n".join(parts), encoding="utf-8")
 
 
-def _write_dashboard(path: Path, report: dict[str, Any]) -> None:
-    data = json.dumps(report, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    html = DASHBOARD_HTML.replace("__REPORT_DATA__", data)
-    path.write_text(html, encoding="utf-8")
+def _write_scenario_svg(path: Path, row: dict[str, Any]) -> None:
+    points = row["points_xy"]
+    corners = row["box_corners_xy"]
+    all_points = points + corners
+    if all_points:
+        xs = [point[0] for point in all_points]
+        ys = [point[1] for point in all_points]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+    else:
+        min_x, max_x, min_y, max_y = -1.0, 1.0, -1.0, 1.0
+
+    def project(point: list[float]) -> tuple[float, float]:
+        x = 55 + (point[0] - min_x) / max(max_x - min_x, 1e-9) * 500
+        y = 415 - (point[1] - min_y) / max(max_y - min_y, 1e-9) * 285
+        return x, y
+
+    status = row["status"]
+    status_color = "#36c98f" if status == "OK" else "#f7a13f"
+    truth = " × ".join(f"{value:g}" for value in row["truth_mm"])
+    parts = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="480" viewBox="0 0 900 480">',
+        '<rect width="900" height="480" rx="22" fill="#071a36"/>',
+        f'<text x="44" y="52" font-family="Arial" font-size="26" font-weight="700" fill="#ffffff">{escape(row["title"])}</text>',
+        f'<text x="44" y="80" font-family="Arial" font-size="14" fill="#9fc0e7">{truth} мм · поворот {row["yaw_deg"]:g}° · {row["object_points"]} точек</text>',
+        f'<text x="846" y="53" text-anchor="end" font-family="Arial" font-size="15" font-weight="700" fill="{status_color}">{status}</text>',
+        '<rect x="35" y="105" width="540" height="335" rx="14" fill="#061329" stroke="#21466f"/>',
+        '<text x="615" y="126" font-family="Arial" font-size="15" font-weight="700" fill="#ffffff">РЕЗУЛЬТАТ</text>',
+        f'<text x="615" y="157" font-family="Arial" font-size="14" fill="#9fc0e7">Эталон: {truth} мм</text>',
+    ]
+    for point in points:
+        x, y = project(point)
+        parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="1.45" fill="#4da3ff" fill-opacity=".62"/>')
+    if corners:
+        projected = [project(point) for point in corners + [corners[0]]]
+        value = " ".join(f"{x:.2f},{y:.2f}" for x, y in projected)
+        parts.append(f'<polyline points="{value}" fill="none" stroke="#f7a13f" stroke-width="3"/>')
+    if row["measured_mm"] is not None:
+        measured = " × ".join(f"{value:.2f}" for value in row["measured_mm"])
+        errors = " / ".join(f"{value:.2f}" for value in row["error_mm"])
+        limits = " / ".join(f"{value:.2f}" for value in row["tolerance_mm"])
+        parts.extend(
+            [
+                f'<text x="615" y="188" font-family="Arial" font-size="14" fill="#ffffff">Измерено:</text>',
+                f'<text x="615" y="213" font-family="Arial" font-size="18" font-weight="700" fill="#4da3ff">{measured} мм</text>',
+                f'<text x="615" y="254" font-family="Arial" font-size="14" fill="#9fc0e7">Ошибка L / W / H</text>',
+                f'<text x="615" y="279" font-family="Arial" font-size="17" font-weight="700" fill="#ffffff">{errors} мм</text>',
+                f'<text x="615" y="314" font-family="Arial" font-size="13" fill="#9fc0e7">Допуск: {limits} мм</text>',
+                '<rect x="615" y="345" width="225" height="42" rx="10" fill="#10365a"/>',
+                '<text x="727" y="372" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#36c98f">РАЗМЕРЫ В ДОПУСКЕ</text>',
+            ]
+        )
+    else:
+        reason = ", ".join(row["reasons"])
+        parts.extend(
+            [
+                '<text x="615" y="198" font-family="Arial" font-size="17" font-weight="700" fill="#f7a13f">Размеры не публикуются</text>',
+                '<text x="615" y="231" font-family="Arial" font-size="13" fill="#9fc0e7">Quality gate остановил расчёт.</text>',
+                f'<text x="615" y="269" font-family="Arial" font-size="13" fill="#ffffff">{escape(reason)}</text>',
+            ]
+        )
+    parts.append('</svg>')
+    path.write_text("\n".join(parts), encoding="utf-8")
 
 
 def write_outputs(output_dir: str | Path, report: dict[str, Any]) -> None:
@@ -237,7 +301,10 @@ def write_outputs(output_dir: str | Path, report: dict[str, Any]) -> None:
         encoding="utf-8",
     )
     _write_overview_svg(output_path / "overview.svg", report)
-    _write_dashboard(output_path / "dashboard.html", report)
+    scenario_path = output_path / "scenarios"
+    scenario_path.mkdir(exist_ok=True)
+    for row in report["scenarios"]:
+        _write_scenario_svg(scenario_path / f"{row['id']}.svg", row)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -254,92 +321,9 @@ def main() -> int:
     summary = report["summary"]
     print(f"Сценарии: {summary['passed']}/{summary['total']} прошли ожидаемую проверку")
     print(f"Максимальная ошибка: {summary['max_error_mm']:.3f} мм")
-    print("Dashboard:", args.output_dir / "dashboard.html")
+    print("Сводка:", args.output_dir / "overview.svg")
     return 0 if summary["passed"] == summary["total"] else 1
 
-
-DASHBOARD_HTML = r'''<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Проверка алгоритма на наборах данных</title>
-<style>
-:root{color-scheme:light dark;--bg:#06152e;--panel:#0d2343;--panel2:#122d54;--text:#eef6ff;--muted:#9cb9dc;--line:#264b77;--blue:#55a9ff;--orange:#ff9c42;--green:#42d39e;--red:#ff6f7f;--shadow:0 18px 45px rgba(0,0,0,.28)}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#153e75 0,transparent 36%),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}.shell{max-width:1240px;margin:auto;padding:38px 24px 56px;overflow:hidden}header{display:flex;gap:20px;justify-content:space-between;align-items:flex-end;margin-bottom:28px}h1{font-size:clamp(28px,4vw,48px);line-height:1.05;margin:0 0 10px;max-width:780px}header p{margin:0;color:var(--muted);font-size:17px}.stamp{white-space:nowrap;color:var(--orange);font-size:13px;font-weight:700;letter-spacing:.04em}.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:26px}.stat{min-width:0;background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}.stat b{display:block;font-size:clamp(22px,2.5vw,30px);line-height:1.1;margin-top:5px;white-space:nowrap}.stat span{color:var(--muted)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}.filter,.scenario{font:inherit;color:var(--text);border:1px solid var(--line);background:transparent;cursor:pointer}.filter{border-radius:999px;padding:8px 14px}.filter[aria-pressed="true"]{background:var(--text);color:var(--bg);border-color:var(--text)}.scenarios{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:24px}.scenario{text-align:left;border-radius:14px;padding:13px 14px;min-height:78px;overflow-wrap:anywhere;transition:transform .18s,border-color .18s,background .18s}.scenario:hover{transform:translateY(-2px);border-color:var(--blue)}.scenario[aria-pressed="true"]{background:var(--panel2);border-color:var(--blue)}.scenario strong,.scenario small{display:block}.scenario small{color:var(--muted);margin-top:2px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;background:var(--green)}.dot.reject{background:var(--orange)}.detail{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:18px}.panel{min-width:0;background:rgba(13,35,67,.88);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:var(--shadow)}.panel-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:12px}.panel h2,.panel h3{margin:0}.panel h2{font-size:24px}.meta{color:var(--muted);margin:4px 0 0}.badge{border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;letter-spacing:.05em}.badge.ok{background:rgba(66,211,158,.16);color:var(--green)}.badge.reject{background:rgba(255,156,66,.16);color:var(--orange)}#cloud{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:14px;background:linear-gradient(180deg,#07162c,#0a1c35)}#cloud circle{fill:var(--blue);opacity:.65}#cloud polyline{fill:none;stroke:var(--orange);stroke-width:3;vector-effect:non-scaling-stroke}.finding{margin:14px 0 0;padding-left:14px;border-left:3px solid var(--orange);color:#dcecff}.metric{margin:17px 0}.metric-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:7px}.metric-row span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}.track{height:9px;border-radius:8px;background:#19375d;overflow:hidden;position:relative}.truth,.measured{position:absolute;left:0;height:100%;border-radius:8px}.truth{background:var(--line);top:0}.measured{background:var(--blue);top:0;height:4px;margin-top:2.5px}.legend{display:flex;gap:16px;color:var(--muted);font-size:12px;margin-top:13px}.key{display:inline-block;width:16px;height:5px;border-radius:4px;margin-right:6px;vertical-align:middle;background:var(--blue)}.key.truth{position:static;display:inline-block;background:var(--line);height:9px}.quality{margin-top:18px;padding-top:15px;border-top:1px solid var(--line);color:var(--muted)}.conclusions{margin-top:18px}.conclusions ol{margin:10px 0 0;padding-left:22px}.conclusions li{margin:8px 0}.hidden{display:none!important}@media(max-width:820px){header{display:block}.stamp{display:block;margin-top:12px}.summary{grid-template-columns:1fr}.scenarios{grid-template-columns:1fr 1fr}.detail{grid-template-columns:1fr}}@media(max-width:520px){.shell{padding:24px 14px}.scenarios{grid-template-columns:1fr}.panel{padding:15px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
-</head>
-<body>
-<div class="shell">
-  <header><div><h1>Как алгоритм ведёт себя на разных данных</h1><p>Размеры, повороты, шум и потеря одного из ракурсов.</p></div><span class="stamp">9 НАБОРОВ · FIXED SEED</span></header>
-  <section class="summary" aria-label="Итоговые показатели">
-    <div class="stat"><span>Пройдено сценариев</span><b id="total-pass"></b></div>
-    <div class="stat"><span>Геометрия в допуске</span><b id="geometry-pass"></b></div>
-    <div class="stat"><span>Максимальная ошибка</span><b id="max-error"></b></div>
-  </section>
-  <div class="toolbar" role="group" aria-label="Фильтр сценариев">
-    <button class="filter" data-filter="all" aria-pressed="true">Все</button>
-    <button class="filter" data-filter="geometry" aria-pressed="false">Размеры и повороты</button>
-    <button class="filter" data-filter="robustness" aria-pressed="false">Шум</button>
-    <button class="filter" data-filter="quality" aria-pressed="false">Quality gate</button>
-  </div>
-  <nav class="scenarios" id="scenario-list" aria-label="Наборы данных"></nav>
-  <main class="detail" aria-live="polite">
-    <section class="panel">
-      <div class="panel-head"><div><h2 id="scenario-title"></h2><p class="meta" id="scenario-meta"></p></div><span id="status" class="badge"></span></div>
-      <svg id="cloud" viewBox="0 0 640 360" role="img" aria-label="Проекция очищенного облака точек и найденный прямоугольник"></svg>
-      <p class="finding" id="finding"></p>
-    </section>
-    <aside class="panel">
-      <h3>Размеры и ошибка</h3>
-      <div id="metrics"></div>
-      <div class="legend"><span><i class="key truth"></i>эталон</span><span><i class="key"></i>измерение</span></div>
-      <p class="quality" id="quality"></p>
-    </aside>
-  </main>
-  <section class="panel conclusions"><h3>Выводы по серии</h3><ol id="conclusions"></ol></section>
-</div>
-<script>
-const report=__REPORT_DATA__;
-const labels=['Длина','Ширина','Высота'];
-let selected=report.scenarios[0].id;
-const list=document.getElementById('scenario-list');
-document.getElementById('total-pass').textContent=`${report.summary.passed} / ${report.summary.total}`;
-document.getElementById('geometry-pass').textContent=`${report.summary.geometry_passed} / ${report.summary.geometry_total}`;
-document.getElementById('max-error').textContent=`${report.summary.max_error_mm.toFixed(2)} / ${report.summary.max_error_tolerance_mm.toFixed(2)} мм`;
-document.getElementById('conclusions').innerHTML=report.conclusions.map(x=>`<li>${x}</li>`).join('');
-function makeButtons(filter='all'){
-  list.innerHTML='';
-  report.scenarios.filter(s=>filter==='all'||s.category===filter).forEach(s=>{
-    const b=document.createElement('button');b.className='scenario';b.dataset.id=s.id;b.setAttribute('aria-pressed',s.id===selected);
-    b.innerHTML=`<strong><i class="dot ${s.status==='REJECT'?'reject':''}"></i>${s.title}</strong><small>${s.description}</small>`;
-    b.addEventListener('click',()=>{selected=s.id;render(s);[...list.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.id===selected));});list.appendChild(b);
-  });
-  if(!list.querySelector(`[data-id="${selected}"]`)){const first=list.firstElementChild;if(first){selected=first.dataset.id;render(report.scenarios.find(s=>s.id===selected));first.setAttribute('aria-pressed','true')}}
-}
-function renderCloud(s){
-  const svg=document.getElementById('cloud'),all=[...s.points_xy,...s.box_corners_xy];svg.innerHTML='';
-  if(!all.length){svg.innerHTML='<text x="320" y="185" text-anchor="middle" fill="#9cb9dc">Нет точек для отображения</text>';return}
-  const xs=all.map(p=>p[0]),ys=all.map(p=>p[1]),minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),pad=28;
-  const sx=x=>pad+(x-minX)/Math.max(maxX-minX,1)*(640-pad*2),sy=y=>360-pad-(y-minY)/Math.max(maxY-minY,1)*(360-pad*2);
-  s.points_xy.forEach((p,i)=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',sx(p[0]));c.setAttribute('cy',sy(p[1]));c.setAttribute('r','1.7');c.style.animation=`point-in .28s ${Math.min(i,80)*2}ms both`;svg.appendChild(c)});
-  if(s.box_corners_xy.length){const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');const pts=[...s.box_corners_xy,s.box_corners_xy[0]].map(p=>`${sx(p[0])},${sy(p[1])}`).join(' ');poly.setAttribute('points',pts);svg.appendChild(poly)}
-}
-function render(s){
-  document.getElementById('scenario-title').textContent=s.title;document.getElementById('scenario-meta').textContent=`${s.truth_mm.join(' × ')} мм · поворот ${s.yaw_deg}° · ${s.object_points} точек`;
-  const badge=document.getElementById('status');badge.textContent=s.status;badge.className=`badge ${s.status.toLowerCase()}`;document.getElementById('finding').textContent=s.finding;renderCloud(s);
-  const metrics=document.getElementById('metrics');
-  if(!s.measured_mm){metrics.innerHTML='<p class="meta">Размеры не публикуются: проверка качества остановила расчёт.</p>'}
-  else{const scale=Math.max(...s.truth_mm,...s.measured_mm);metrics.innerHTML=labels.map((label,i)=>`<div class="metric"><div class="metric-row"><strong>${label}</strong><span>${s.measured_mm[i].toFixed(2)} / ${s.truth_mm[i].toFixed(2)} мм · Δ ${s.error_mm[i].toFixed(2)}</span></div><div class="track"><i class="truth" style="width:${s.truth_mm[i]/scale*100}%"></i><i class="measured" style="width:${s.measured_mm[i]/scale*100}%"></i></div></div>`).join('')}
-  const reason=s.reasons.length?`Причина: ${s.reasons.join(', ')}`:`Доля сенсоров: ${Object.entries(s.sensor_shares).map(([k,v])=>`${k} ${(v*100).toFixed(1)}%`).join(' · ')}`;document.getElementById('quality').textContent=reason;
-}
-document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');makeButtons(b.dataset.filter)}));
-const style=document.createElement('style');style.textContent='@keyframes point-in{from{opacity:0;transform:translateY(5px)}to{opacity:.65;transform:none}}';document.head.appendChild(style);
-makeButtons();render(report.scenarios[0]);
-</script>
-</body>
-</html>'''
 
 
 if __name__ == "__main__":

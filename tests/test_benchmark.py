@@ -23,16 +23,19 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(summary["geometry_passed"], summary["geometry_total"])
         self.assertEqual(summary["quality_passed"], summary["quality_total"])
 
-    def test_dashboard_and_machine_readable_results_are_written(self):
+    def test_readme_assets_and_machine_readable_results_are_written(self):
         with tempfile.TemporaryDirectory() as directory:
             write_outputs(directory, self.report)
             output = Path(directory)
-            self.assertTrue((output / "dashboard.html").exists())
             self.assertTrue((output / "overview.svg").exists())
             saved = json.loads((output / "results.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["summary"]["total"], 9)
-            dashboard = (output / "dashboard.html").read_text(encoding="utf-8")
-            self.assertIn("Как алгоритм ведёт себя", dashboard)
+            scenario_svgs = sorted((output / "scenarios").glob("*.svg"))
+            self.assertEqual(len(scenario_svgs), 9)
+            self.assertIn(
+                "Стандартная коробка",
+                (output / "scenarios" / "standard-box.svg").read_text(encoding="utf-8"),
+            )
 
 
 if __name__ == "__main__":

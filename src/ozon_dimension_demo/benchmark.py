@@ -172,47 +172,93 @@ def build_report(specs: list[DatasetSpec]) -> dict[str, Any]:
 
 def _write_overview_svg(path: Path, report: dict[str, Any]) -> None:
     rows = report["scenarios"]
-    width = 1200
-    row_height = 54
-    height = 150 + row_height * len(rows)
-    paired_limits = []
-    for row in rows:
-        if row["error_mm"] is not None:
-            side = int(np.argmax(row["error_mm"]))
-            paired_limits.append(row["tolerance_mm"][side])
-    max_value = max(paired_limits + [1.0])
-    chart_left, chart_width = 500, 560
+    summary = report["summary"]
+    width, height = 1200, 880
+    card_width, card_height = 354, 174
+    card_gap_x, card_gap_y = 21, 18
+    card_left, card_top = 48, 276
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-        '<rect width="100%" height="100%" rx="24" fill="#071a36"/>',
-        '<text x="48" y="58" font-family="Arial" font-size="30" font-weight="700" fill="#ffffff">Проверка на девяти наборах данных</text>',
-        '<text x="48" y="92" font-family="Arial" font-size="16" fill="#a9c8ee">Максимальная ошибка сценария относительно допустимого порога</text>',
-        '<text x="1080" y="92" text-anchor="end" font-family="Arial" font-size="14" fill="#a9c8ee">ошибка / допуск, мм</text>',
+        '<defs>',
+        '<linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071a36"/><stop offset="1" stop-color="#041022"/></linearGradient>',
+        '<linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#102d52"/><stop offset="1" stop-color="#0b213f"/></linearGradient>',
+        '<linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4d9fff"/><stop offset="1" stop-color="#63d6ff"/></linearGradient>',
+        '<filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#000814" flood-opacity=".32"/></filter>',
+        '</defs>',
+        '<rect width="1200" height="880" rx="30" fill="url(#background)"/>',
+        '<circle cx="1090" cy="-20" r="250" fill="#17447d" opacity=".22"/>',
+        '<text x="48" y="62" font-family="Arial" font-size="38" font-weight="700" fill="#ffffff">Проверка алгоритма</text>',
+        '<text x="48" y="96" font-family="Arial" font-size="19" fill="#a9c8ee">Девять сценариев: размеры, повороты, шум и потеря данных</text>',
+        '<rect x="900" y="42" width="252" height="42" rx="21" fill="#123963" stroke="#2b5c8c"/>',
+        '<text x="1026" y="69" text-anchor="middle" font-family="Arial" font-size="14" font-weight="700" fill="#9fcaff">FIXED SEED · 9 СЦЕНАРИЕВ</text>',
     ]
+
+    metrics = [
+        ("РЕЗУЛЬТАТ СЕРИИ", f"{summary['passed']} / {summary['total']}", "ожидаемых исходов получено"),
+        ("ГЕОМЕТРИЯ", f"{summary['geometry_passed']} / {summary['geometry_total']}", "измерений внутри допуска"),
+        ("QUALITY GATE", f"{summary['quality_passed']} / {summary['quality_total']}", "проблемных наборов остановлено"),
+    ]
+    for index, (label, value, note) in enumerate(metrics):
+        x = 48 + index * 375
+        parts.extend(
+            [
+                f'<rect x="{x}" y="128" width="354" height="112" rx="18" fill="url(#card)" stroke="#214d79" filter="url(#shadow)"/>',
+                f'<text x="{x + 24}" y="160" font-family="Arial" font-size="14" font-weight="700" fill="#79b9f4">{label}</text>',
+                f'<text x="{x + 24}" y="202" font-family="Arial" font-size="34" font-weight="700" fill="#ffffff">{value}</text>',
+                f'<text x="{x + 112}" y="201" font-family="Arial" font-size="15" fill="#a9c8ee">{note}</text>',
+            ]
+        )
+
     for index, row in enumerate(rows):
-        y = 130 + index * row_height
+        column = index % 3
+        line = index // 3
+        x = card_left + column * (card_width + card_gap_x)
+        y = card_top + line * (card_height + card_gap_y)
         is_reject = row["status"] == "REJECT"
         status_color = "#f7a13f" if is_reject else "#36c98f"
-        status_text = "REJECT" if is_reject else "OK"
-        parts.append(
-            f'<text x="48" y="{y + 25}" font-family="Arial" font-size="16" fill="#ffffff">{row["title"]}</text>'
-        )
-        parts.append(
-            f'<text x="360" y="{y + 25}" font-family="Arial" font-size="13" font-weight="700" fill="{status_color}">{status_text}</text>'
+        badge_width = 82 if is_reject else 54
+        badge_x = x + card_width - badge_width - 20
+        truth = " × ".join(f"{value:g}" for value in row["truth_mm"])
+        parts.extend(
+            [
+                f'<rect x="{x}" y="{y}" width="{card_width}" height="{card_height}" rx="18" fill="url(#card)" stroke="#1e466f"/>',
+                f'<text x="{x + 22}" y="{y + 36}" font-family="Arial" font-size="19" font-weight="700" fill="#ffffff">{escape(row["title"])}</text>',
+                f'<rect x="{badge_x}" y="{y + 18}" width="{badge_width}" height="28" rx="14" fill="{status_color}" fill-opacity=".13" stroke="{status_color}" stroke-opacity=".45"/>',
+                f'<text x="{badge_x + badge_width / 2:.1f}" y="{y + 37}" text-anchor="middle" font-family="Arial" font-size="12" font-weight="700" fill="{status_color}">{row["status"]}</text>',
+                f'<text x="{x + 22}" y="{y + 64}" font-family="Arial" font-size="14" fill="#91afd2">Эталон: {truth} мм</text>',
+            ]
         )
         if row["error_mm"] is None:
-            parts.append(f'<line x1="{chart_left}" y1="{y + 20}" x2="{chart_left + chart_width}" y2="{y + 20}" stroke="#25466f" stroke-width="10" stroke-linecap="round"/>')
-            parts.append(f'<text x="{chart_left + 12}" y="{y + 25}" font-family="Arial" font-size="13" fill="#f7c482">измерение остановлено quality gate</text>')
+            reason = (
+                "Второй сенсор недоступен"
+                if any("MISSING_SENSOR" in value for value in row["reasons"])
+                else "Недостаточно данных сенсора 2"
+            )
+            parts.extend(
+                [
+                    f'<text x="{x + 22}" y="{y + 105}" font-family="Arial" font-size="22" font-weight="700" fill="#f7a13f">Расчёт остановлен</text>',
+                    f'<text x="{x + 22}" y="{y + 133}" font-family="Arial" font-size="14" fill="#d3e3f7">{reason}</text>',
+                    f'<circle cx="{x + 325}" cy="{y + 129}" r="10" fill="#f7a13f" fill-opacity=".18" stroke="#f7a13f"/>',
+                    f'<path d="M {x + 325} {y + 122} V {y + 131} M {x + 325} {y + 136} v 1" stroke="#f7a13f" stroke-width="2.5" stroke-linecap="round"/>',
+                ]
+            )
         else:
             side = int(np.argmax(row["error_mm"]))
             error = row["error_mm"][side]
             tolerance = row["tolerance_mm"][side]
-            tolerance_x = chart_left + chart_width * tolerance / max_value
-            error_width = max(4.0, chart_width * error / max_value)
-            parts.append(f'<line x1="{chart_left}" y1="{y + 20}" x2="{chart_left + chart_width}" y2="{y + 20}" stroke="#17385f" stroke-width="10" stroke-linecap="round"/>')
-            parts.append(f'<line x1="{chart_left}" y1="{y + 20}" x2="{chart_left + error_width}" y2="{y + 20}" stroke="#4da3ff" stroke-width="10" stroke-linecap="round"/>')
-            parts.append(f'<line x1="{tolerance_x}" y1="{y + 9}" x2="{tolerance_x}" y2="{y + 31}" stroke="#f7a13f" stroke-width="3"/>')
-            parts.append(f'<text x="1080" y="{y + 25}" text-anchor="end" font-family="Arial" font-size="14" fill="#dcecff">{error:.2f} / {tolerance:.2f}</text>')
+            ratio = min(error / tolerance, 1.0)
+            percent = round(ratio * 100)
+            bar_width = 310
+            filled_width = max(5.0, bar_width * ratio)
+            parts.extend(
+                [
+                    f'<text x="{x + 22}" y="{y + 105}" font-family="Arial" font-size="28" font-weight="700" fill="#ffffff">{error:.2f} мм</text>',
+                    f'<text x="{x + 22}" y="{y + 128}" font-family="Arial" font-size="13" fill="#91afd2">макс. ошибка · допуск {tolerance:.2f} мм</text>',
+                    f'<text x="{x + 332}" y="{y + 128}" text-anchor="end" font-family="Arial" font-size="13" font-weight="700" fill="#63d6ff">{percent}% допуска</text>',
+                    f'<rect x="{x + 22}" y="{y + 145}" width="{bar_width}" height="10" rx="5" fill="#173a62"/>',
+                    f'<rect x="{x + 22}" y="{y + 145}" width="{filled_width:.1f}" height="10" rx="5" fill="url(#bar)"/>',
+                ]
+            )
     parts.append('</svg>')
     path.write_text("\n".join(parts), encoding="utf-8")
 

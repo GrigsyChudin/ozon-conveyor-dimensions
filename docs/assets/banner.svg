@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Измерение габаритов товара на конвейере</title>
+  <desc id="desc">Схема двух лазерных датчиков над коробкой на конвейере</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#06152e"/><stop offset="1" stop-color="#153b73"/></linearGradient>
+    <linearGradient id="belt" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e4d82"/><stop offset="1" stop-color="#2c6ba8"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#020916" flood-opacity=".45"/></filter>
+  </defs>
+  <rect width="1200" height="360" rx="28" fill="url(#bg)"/>
+  <circle cx="1110" cy="42" r="150" fill="#2f71c4" opacity=".12"/>
+  <circle cx="1050" cy="315" r="115" fill="#f48b34" opacity=".08"/>
+  <g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#fff">
+    <text x="68" y="102" font-size="18" font-weight="700" letter-spacing="2.4" fill="#8dc4ff">COMPUTER VISION · УЧЕБНЫЙ ПРОТОТИП</text>
+    <text x="68" y="159" font-size="43" font-weight="750">Измерение габаритов</text>
+    <text x="68" y="207" font-size="43" font-weight="750">товара на конвейере</text>
+    <text x="70" y="250" font-size="20" fill="#c8dcf5">Два ракурса облака точек → фильтрация → 2.5D OBB</text>
+    <g transform="translate(70 279)"><rect width="300" height="42" rx="21" fill="#f48b34"/><text x="150" y="28" text-anchor="middle" font-size="17" font-weight="700">погрешность в демо &lt; 2 мм</text></g>
+  </g>
+  <g transform="translate(720 52)" filter="url(#shadow)">
+    <path d="M24 225h390l-38 58H62z" fill="url(#belt)" stroke="#70a9df" stroke-width="2"/>
+    <path d="M62 283v21M376 283v21" stroke="#80add8" stroke-width="9" stroke-linecap="round"/>
+    <path d="M101 215l92-42 142 19-94 48z" fill="#f6a44c"/><path d="M101 215v-77l92-40v75z" fill="#de7522"/><path d="M193 173V98l142 20v74z" fill="#ffbe6f"/><path d="M101 138l92 13 142-33-142-20z" fill="#ffd397"/>
+    <g fill="#7fc4ff" stroke="#d8efff" stroke-width="2"><rect x="62" y="10" width="68" height="42" rx="8"/><rect x="334" y="10" width="68" height="42" rx="8"/></g>
+    <g fill="#06152e"><circle cx="96" cy="31" r="8"/><circle cx="368" cy="31" r="8"/></g>
+    <g stroke="#67d3ff" stroke-width="3" opacity=".8"><path d="M96 52l54 92M368 52l-61 76"/><path d="M96 52l120 120M368 52L247 183"/></g>
+    <g fill="#9ee9ff"><circle cx="150" cy="144" r="4"/><circle cx="169" cy="151" r="4"/><circle cx="188" cy="158" r="4"/><circle cx="307" cy="128" r="4"/><circle cx="286" cy="147" r="4"/><circle cx="265" cy="166" r="4"/></g>
+    <g stroke="#fff" stroke-width="2" fill="none" opacity=".9"><path d="M93 238v25h243v-25"/><path d="M77 216H54v-78h23"/></g>
+    <g font-family="Inter,Segoe UI,Arial,sans-serif" fill="#fff" font-size="15" font-weight="700"><text x="214" y="281" text-anchor="middle">L × W</text><text x="38" y="181" text-anchor="middle">H</text></g>
+  </g>
+</svg>
